@@ -1,0 +1,768 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generatore di Bolle Semplice</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+            color: #374151;
+        }
+        .container {
+            max-width: 900px;
+            margin: 2rem auto;
+            padding: 2rem;
+            background-color: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        input[type="text"], input[type="number"], textarea, select {
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            padding: 0.75rem 1rem;
+            width: 100%;
+            font-size: 1rem;
+            color: #374151;
+            transition: border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+        }
+        input[type="text"]:focus, input[type="number"]:focus, textarea:focus, select:focus {
+            outline: none;
+            border-color: #6366f1;
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+        }
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s ease-in-out, transform 0.1s ease-in-out;
+        }
+        .btn-primary {
+            background-color: #6366f1;
+            color: #ffffff;
+        }
+        .btn-primary:hover {
+            background-color: #4f46e5;
+            transform: translateY(-1px);
+        }
+        .btn-secondary {
+            background-color: #e5e7eb;
+            color: #374151;
+            border: 1px solid #d1d5db;
+        }
+        .btn-secondary:hover {
+            background-color: #d1d5db;
+            transform: translateY(-1px);
+        }
+        .btn-danger {
+            background-color: #ef4444;
+            color: #ffffff;
+        }
+        .btn-danger:hover {
+            background-color: #dc2626;
+            transform: translateY(-1px);
+        }
+        .table-header th {
+            padding: 0.75rem 1rem;
+            text-align: left;
+            background-color: #f9fafb;
+            font-weight: 600;
+            color: #4b5563;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        .table-body td {
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        .modal {
+            display: none; /* Hidden by default */
+            position: fixed; /* Stay in place */
+            z-index: 1000; /* Sit on top */
+            left: 0;
+            top: 0;
+            width: 100%; /* Full width */
+            height: 100%; /* Full height */
+            overflow: auto; /* Enable scroll if needed */
+            background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-content {
+            background-color: #fefefe;
+            margin: auto;
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            width: 90%;
+            max-width: 800px;
+            position: relative;
+        }
+        .close-button {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            color: #aaa;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .close-button:hover,
+        .close-button:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
+        /* Stili specifici per la stampa */
+        @media print {
+            body > *:not(#bollaModal) { /* Nasconde tutto il body tranne il modal */
+                display: none !important;
+            }
+            #bollaModal { /* Assicura che il modal sia visibile per stampare il suo contenuto */
+                display: block !important;
+                position: static !important; /* Rimuove il posizionamento fisso per il flusso di stampa */
+                background-color: transparent !important; /* Nessun overlay di sfondo */
+                overflow: visible !important; /* Permette al contenuto di fluire */
+                width: 100% !important;
+                height: auto !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                box-shadow: none !important;
+            }
+            #bollaModal .modal-content { /* Assicura che il contenuto del modal sia visibile e a larghezza piena */
+                width: 100% !important;
+                max-width: none !important;
+                box-shadow: none !important;
+                margin: 0 !important;
+                padding: 0.5cm !important; /* Margine ridotto per il contenuto del modal */
+                border-radius: 0 !important;
+                background-color: white !important;
+            }
+            #print-area { /* Il contenuto effettivo da stampare */
+                padding: 0.5cm !important; /* Margine ridotto per l'area di stampa */
+                box-shadow: none !important;
+                border-radius: 0 !important;
+                background-color: white !important;
+            }
+            .no-print {
+                display: none !important; /* Nasconde gli elementi con classe no-print */
+            }
+            /* Assicura che le celle della tabella non taglino il testo */
+            table {
+                width: 100%;
+                border-collapse: collapse;
+                page-break-inside: auto;
+            }
+            th, td {
+                border: 1px solid #ccc; /* Bordi più sottili per la stampa */
+                padding: 8px;
+                text-align: left;
+                vertical-align: top;
+                white-space: normal; /* Permette al testo di andare a capo */
+                word-break: break-word; /* Forze il taglio delle parole lunghe */
+            }
+            thead {
+                display: table-header-group; /* Ripete l'intestazione della tabella su ogni pagina */
+            }
+            tr {
+                page-break-inside: avoid; /* Evita di spezzare una riga su due pagine */
+                page-break-after: auto;
+            }
+            img {
+                max-width: 100px; /* Regola la dimensione del logo per la stampa */
+                height: auto;
+            }
+            /* Stili per i campi di testo nella tabella per la stampa */
+            .qty-input, .skn-input, .sku-input, .size-input, .description-input {
+                border: none !important;
+                background-color: transparent !important;
+                padding: 0 !important;
+                font-size: inherit !important; /* Mantieni la dimensione del font ereditata */
+                color: inherit !important; /* Mantieni il colore del testo ereditato */
+                width: auto !important; /* Lascia che la larghezza si adatti al contenuto */
+                box-shadow: none !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="text-3xl font-bold text-center mb-8 text-indigo-700">Generatore di Bolle Semplice</h1>
+
+        <!-- Sezione Dati Mittente -->
+        <div class="bg-gray-50 p-6 rounded-lg mb-6 border border-gray-200">
+            <h2 class="text-xl font-semibold mb-4 text-gray-800">Dati Mittente</h2>
+            <div class="flex items-center mb-4">
+                <img src="https://brand-news.it/wp-content/uploads/2020/03/nuovo-logo-QVC-.jpg" alt="Logo Azienda" class="w-24 h-24 mr-4 rounded-lg shadow-sm">
+                <div>
+                    <p class="font-bold text-lg">QVC Italia S.r.l.</p>
+                    <p class="text-sm">Sede legale ed operativa: Via Guzzina 18, 20861 Brugherio (MB)</p>
+                    <p class="text-sm">Tel. +39 039 9891000 Fax +39 039 9893000</p>
+                    <p class="text-sm">CF/PI/Registro Imprese di Monza e Brianza 10050721009</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sezione Dati Bolla e Destinatario -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            <div>
+                <label for="bollaNumber" class="block text-sm font-medium text-gray-700 mb-1">Numero Bolla</label>
+                <input type="text" id="bollaNumber" class="w-full">
+            </div>
+            <div>
+                <label for="bollaDate" class="block text-sm font-medium text-gray-700 mb-1">Data</label>
+                <input type="date" id="bollaDate" class="w-full">
+            </div>
+            <div class="md:col-span-2">
+                <h2 class="text-xl font-semibold mb-3 text-gray-800">Dati Destinatario</h2>
+                <label for="recipientSelect" class="block text-sm font-medium text-gray-700 mb-1">Seleziona Destinatario</label>
+                <select id="recipientSelect" class="w-full mb-3">
+                    <option value="">Nuovo Destinatario</option>
+                    <!-- Le opzioni verranno popolate da JavaScript -->
+                </select>
+
+                <label for="recipientName" class="block text-sm font-medium text-gray-700 mb-1">Spett.le</label>
+                <input type="text" id="recipientName" placeholder="Nome Destinatario" class="mb-2">
+                <input type="text" id="recipientAddress" placeholder="Indirizzo" class="mb-2">
+                <input type="text" id="recipientCity" placeholder="Città (CAP)" class="mb-2">
+                <input type="text" id="recipientPhone" placeholder="Telefono" class="mb-2">
+            </div>
+        </div>
+
+        <!-- Sezione Articoli -->
+        <div class="mb-6">
+            <h2 class="text-xl font-semibold mb-3 text-gray-800">Articoli</h2>
+            <!-- Input per copia-incolla di massa -->
+            <div class="mb-4">
+                <label for="massPasteInput" class="block text-sm font-medium text-gray-700 mb-1">Incolla codici (SKN SKU SIZE, una riga per articolo)</label>
+                <textarea id="massPasteInput" rows="6" placeholder="Es:&#10;152816 ACM XS&#10;152970 QTQ W42&#10;217459" class="w-full"></textarea>
+                <button id="importItemsBtn" class="btn btn-primary mt-2">Importa Articoli</button>
+            </div>
+
+            <div class="overflow-x-auto rounded-lg border border-gray-200">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="table-header">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">QTY</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">SKN</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">SKU</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">SIZE</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">DESCRIZIONE DEI BENI</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider no-print">Azione</th>
+                        </tr>
+                    </thead>
+                    <tbody id="itemsTableBody" class="bg-white divide-y divide-gray-200 table-body">
+                        <!-- Righe degli articoli verranno aggiunte qui via JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+            <button id="addItemBtn" class="btn btn-secondary mt-4 w-full md:w-auto">Aggiungi Articolo Manualmente</button>
+        </div>
+
+        <!-- Sezione Informazioni Aggiuntive -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            <div>
+                <label for="aspect" class="block text-sm font-medium text-gray-700 mb-1">Aspetto Est. Beni</label>
+                <input type="text" id="aspect" value="A VISTA">
+            </div>
+            <div>
+                <label for="packages" class="block text-sm font-medium text-gray-700 mb-1">Colli</label>
+                <input type="number" id="packages" class="w-full" readonly>
+            </div>
+            <div class="md:col-span-2">
+                <label for="reason" class="block text-sm font-medium text-gray-700 mb-1">Causale</label>
+                <input type="text" id="reason" placeholder="Causale del trasporto">
+            </div>
+            <div>
+                <label for="transportStart" class="block text-sm font-medium text-gray-700 mb-1">Inizio Trasporto</label>
+                <input type="date" id="transportStart" class="w-full">
+            </div>
+        </div>
+
+        <!-- Sezione Note e Firme -->
+        <div class="mb-6">
+            <label for="notes" class="block text-sm font-medium text-gray-700 mb-1">Note</label>
+            <textarea id="notes" rows="3" placeholder="Aggiungi note qui..." class="w-full"></textarea>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Firma del Conducente</label>
+                <div class="border border-gray-300 rounded-lg p-4 h-24 flex items-center justify-center text-gray-500 italic">
+                    (Spazio per la firma)
+                </div>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Firma del Destinatario</label>
+                <div class="border border-gray-300 rounded-lg p-4 h-24 flex items-center justify-center text-gray-500 italic">
+                    (Spazio per la firma)
+                </div>
+            </div>
+        </div>
+
+        <!-- Bottoni Azione -->
+        <div class="flex justify-center space-x-4 no-print">
+            <button id="generateBollaBtn" class="btn btn-primary">Genera Bolla</button>
+            <button id="clearFormBtn" class="btn btn-secondary">Pulisci Modulo</button>
+        </div>
+    </div>
+
+    <!-- Modal per la Bolla Generata -->
+    <div id="bollaModal" class="modal">
+        <div class="modal-content">
+            <span class="close-button no-print">&times;</span>
+            <div id="print-area" class="p-8">
+                <!-- Contenuto della bolla generata verrà iniettato qui per la stampa -->
+            </div>
+            <div class="flex justify-end space-x-4 mt-6 no-print">
+                <button id="printBollaBtn" class="btn btn-primary">Stampa Bolla</button>
+                <button id="closeModalBtn" class="btn btn-secondary">Chiudi</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Funzione per ottenere la data corrente nel formato YYYY-MM-DD
+        function getCurrentDate() {
+            const today = new Date();
+            const year = today.getFullYear();
+            const month = String(today.getMonth() + 1).padStart(2, '0'); // Mesi da 0 a 11
+            const day = String(today.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+
+        // Funzione per generare il prossimo numero di bolla sequenziale
+        function getNextBollaNumber() {
+            const year = new Date().getFullYear().toString().slice(-2); // Ultime due cifre dell'anno
+            let lastBollaNum = parseInt(localStorage.getItem('lastBollaNum') || '0', 10);
+            return `${String(lastBollaNum + 1).padStart(3, '0')}-${year}`;
+        }
+
+        // Rubrica destinatari
+        const recipientBook = [
+            {
+                name: 'LAKEROOM',
+                address: 'VIALE DEGLI ARTIGIANI, 14',
+                city: '20832 DESIO (MB)',
+                phone: '0362 621674'
+            },
+            // Puoi aggiungere altri destinatari qui
+            // {
+            //     name: 'Altro Destinatario',
+            //     address: 'Via Roma, 1',
+            //     city: '00100 Roma (RM)',
+            //     phone: '06 12345678'
+            // }
+        ];
+
+        // Funzione per aggiungere una riga articolo
+        function addRow(qty = 1, skn = '', sku = '', size = '', description = '') {
+            const itemsTableBody = document.getElementById('itemsTableBody');
+            const newRow = itemsTableBody.insertRow();
+            newRow.className = 'bg-white';
+            newRow.innerHTML = `
+                <td class="px-6 py-4 whitespace-nowrap"><input type="number" class="w-20 qty-input" value="${qty}" min="1"></td>
+                <td class="px-6 py-4 whitespace-nowrap"><input type="text" class="w-32 skn-input" value="${skn}"></td>
+                <td class="px-6 py-4 whitespace-nowrap"><input type="text" class="w-24 sku-input" value="${sku}"></td>
+                <td class="px-6 py-4 whitespace-nowrap"><input type="text" class="w-20 size-input" value="${size}"></td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                    <input type="text" class="w-full description-input" value="${description}">
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap no-print">
+                    <button class="btn btn-danger btn-sm remove-item-btn">Rimuovi</button>
+                </td>
+            `;
+
+            // Funzione interna per aggiornare i colli
+            function updatePackagesInternal() {
+                let totalQty = 0;
+                itemsTableBody.querySelectorAll('.qty-input').forEach(input => {
+                    totalQty += parseInt(input.value) || 0;
+                });
+                document.getElementById('packages').value = totalQty;
+            }
+
+            newRow.querySelector('.remove-item-btn').addEventListener('click', (e) => {
+                e.target.closest('tr').remove();
+                updatePackagesInternal();
+            });
+
+            newRow.querySelector('.qty-input').addEventListener('input', updatePackagesInternal);
+            updatePackagesInternal(); // Aggiorna i colli ogni volta che si aggiunge una riga
+        }
+
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const bollaNumberInput = document.getElementById('bollaNumber');
+            const bollaDateInput = document.getElementById('bollaDate');
+            const transportStartInput = document.getElementById('transportStart');
+            const itemsTableBody = document.getElementById('itemsTableBody');
+            const addItemBtn = document.getElementById('addItemBtn');
+            const importItemsBtn = document.getElementById('importItemsBtn');
+            const massPasteInput = document.getElementById('massPasteInput');
+            const generateBollaBtn = document.getElementById('generateBollaBtn');
+            const clearFormBtn = document.getElementById('clearFormBtn');
+            const bollaModal = document.getElementById('bollaModal');
+            const closeModalBtn = document.getElementById('closeModalBtn');
+            const printBollaBtn = document.getElementById('printBollaBtn');
+            const printArea = document.getElementById('print-area');
+
+            // Campi destinatario
+            const recipientSelect = document.getElementById('recipientSelect');
+            const recipientNameInput = document.getElementById('recipientName');
+            const recipientAddressInput = document.getElementById('recipientAddress');
+            const recipientCityInput = document.getElementById('recipientCity');
+            const recipientPhoneInput = document.getElementById('recipientPhone');
+
+            const aspectInput = document.getElementById('aspect');
+            const packagesInput = document.getElementById('packages');
+            const reasonInput = document.getElementById('reason');
+            const notesInput = document.getElementById('notes');
+
+            // Funzione per calcolare e aggiornare il campo 'Colli'
+            function updatePackagesGlobal() {
+                let totalQty = 0;
+                itemsTableBody.querySelectorAll('.qty-input').forEach(input => {
+                    totalQty += parseInt(input.value) || 0;
+                });
+                packagesInput.value = totalQty;
+            }
+
+
+            // Funzione per popolare il menu a tendina dei destinatari
+            function populateRecipientSelect() {
+                console.log('Populating recipient select...');
+                recipientSelect.innerHTML = '<option value="">Nuovo Destinatario</option>'; // Opzione per inserimento manuale
+                recipientBook.forEach((recipient, index) => {
+                    const option = document.createElement('option');
+                    option.value = index; // Usiamo l'indice come valore per recuperare l'oggetto
+                    option.textContent = recipient.name;
+                    recipientSelect.appendChild(option);
+                    console.log(`Added option: ${recipient.name} with value ${index}`);
+                });
+            }
+
+            // Funzione per riempire i campi del destinatario in base alla selezione
+            function fillRecipientFields(recipient) {
+                console.log('fillRecipientFields called with:', recipient);
+                if (recipient) {
+                    recipientNameInput.value = recipient.name || '';
+                    recipientAddressInput.value = recipient.address || '';
+                    recipientCityInput.value = recipient.city || '';
+                    recipientPhoneInput.value = recipient.phone || '';
+                    console.log('Fields populated:', {
+                        name: recipientNameInput.value,
+                        address: recipientAddressInput.value,
+                        city: recipientCityInput.value,
+                        phone: recipientPhoneInput.value
+                    });
+                } else {
+                    recipientNameInput.value = '';
+                    recipientAddressInput.value = '';
+                    recipientCityInput.value = '';
+                    recipientPhoneInput.value = '';
+                    console.log('Fields cleared.');
+                }
+            }
+
+
+            // Funzione per importare articoli da testo copiato
+            function importItemsFromTextarea() {
+                console.log('importItemsFromTextarea function called.');
+                const text = massPasteInput.value.trim();
+                console.log('Textarea content:', `"${text}"`);
+                if (!text) {
+                    console.log('Textarea is empty, returning.');
+                    return;
+                }
+
+                const lines = text.split('\n');
+                console.log('Lines parsed:', lines);
+                const consolidatedItems = {};
+
+                lines.forEach(line => {
+                    const parts = line.trim().split(/\s+/);
+                    console.log(`Processing line: "${line}", parts:`, parts);
+                    if (parts.length === 0 || (parts.length === 1 && parts[0] === '')) { // Handle empty lines more robustly
+                        console.log('Empty line or only whitespace, skipping.');
+                        return;
+                    }
+
+                    const skn = parts[0] || '';
+                    let sku = '';
+                    let size = '';
+
+                    if (parts.length >= 2) {
+                        sku = parts[1];
+                    }
+                    if (parts.length >= 3) {
+                        size = parts[2];
+                    }
+                    console.log(`Parsed - SKN: "${skn}", SKU: "${sku}", SIZE: "${size}"`);
+
+                    const key = `${skn}_${sku}_${size}`;
+
+                    if (consolidatedItems[key]) {
+                        consolidatedItems[key]++;
+                        console.log(`Consolidated item "${key}", new qty: ${consolidatedItems[key]}`);
+                    } else {
+                        consolidatedItems[key] = 1;
+                        console.log(`New item "${key}", qty: 1`);
+                    }
+                });
+
+                console.log('Consolidated Items:', consolidatedItems);
+
+                itemsTableBody.innerHTML = ''; // Clear existing rows
+                console.log('Items table cleared.');
+
+                for (const key in consolidatedItems) {
+                    const qty = consolidatedItems[key];
+                    const [skn, sku, size] = key.split('_');
+                    let description = skn;
+                    if (sku) description += ` ${sku}`;
+                    if (size) description += ` ${size}`;
+                    console.log(`Adding row: QTY: ${qty}, SKN: ${skn}, SKU: ${sku}, SIZE: ${size}, Desc: ${description}`);
+                    addRow(qty, skn, sku, size, description);
+                }
+
+                updatePackagesGlobal(); // Usa la funzione globale per aggiornare i colli
+                console.log('Packages updated.');
+                massPasteInput.value = '';
+                console.log('Mass paste textarea cleared.');
+            }
+
+            // Listener per il cambio di selezione nel menu a tendina dei destinatari
+            recipientSelect.addEventListener('change', (e) => {
+                const selectedValue = e.target.value;
+                console.log('Recipient select changed. Selected value:', selectedValue);
+                if (selectedValue === "") {
+                    // "Nuovo Destinatario" selezionato
+                    fillRecipientFields(null);
+                } else {
+                    // Assicurati che il valore sia trattato come un numero per l'indice dell'array
+                    const index = Number(selectedValue);
+                    if (index >= 0 && index < recipientBook.length) {
+                        fillRecipientFields(recipientBook[index]);
+                    } else {
+                        console.error('Invalid recipient index selected:', index);
+                        fillRecipientFields(null); // Clear fields if index is invalid
+                    }
+                }
+            });
+
+            // Inizializza i campi data e numero bolla
+            bollaDateInput.value = getCurrentDate();
+            transportStartInput.value = getCurrentDate();
+            bollaNumberInput.value = getNextBollaNumber();
+            populateRecipientSelect(); // Popola la rubrica all'avvio
+            updatePackagesGlobal(); // Usa la funzione globale per aggiornare i colli
+
+            // Aggiungi la prima riga articolo all'avvio (per inserimento manuale)
+            addRow();
+
+            // Listener per il bottone "Aggiungi Articolo Manualmente"
+            addItemBtn.addEventListener('click', () => {
+                addRow();
+                // updatePackagesGlobal() è già chiamato all'interno di addRow
+            });
+
+            // Listener per il bottone "Importa Articoli"
+            importItemsBtn.addEventListener('click', () => {
+                console.log('Import Items button clicked.');
+                importItemsFromTextarea();
+            });
+
+            // Listener per il bottone "Genera Bolla"
+            generateBollaBtn.addEventListener('click', () => {
+                // Aggiorna l'ultimo numero di bolla usato in localStorage
+                const currentBollaNumValue = bollaNumberInput.value;
+                const match = currentBollaNumValue.match(/^(\d+)-/);
+                if (match && parseInt(match[1], 10) > 0) {
+                    localStorage.setItem('lastBollaNum', parseInt(match[1], 10));
+                } else {
+                    console.warn("Il numero di bolla inserito non è nel formato atteso (es. '001-25'). Il contatore automatico non è stato aggiornato.");
+                }
+
+                const bollaData = {
+                    number: bollaNumberInput.value,
+                    date: bollaDateInput.value,
+                    sender: {
+                        name: 'QVC Italia S.r.l.',
+                        address: 'Via Guzzina 18, 20861 Brugherio (MB)',
+                        contact: 'Tel. +39 039 9891000 Fax +39 039 9893000',
+                        fiscal: 'CF/PI/Registro Imprese di Monza e Brianza 10050721009'
+                    },
+                    recipient: {
+                        name: recipientNameInput.value,
+                        address: recipientAddressInput.value,
+                        city: recipientCityInput.value,
+                        phone: recipientPhoneInput.value
+                    },
+                    items: [],
+                    aspect: aspectInput.value,
+                    packages: packagesInput.value,
+                    reason: reasonInput.value,
+                    transportStart: transportStartInput.value,
+                    notes: notesInput.value
+                };
+
+                // Parsing del campo contact per separare Tel e Fax
+                let senderTel = '';
+                let senderFax = '';
+                const contactParts = bollaData.sender.contact.split('Fax');
+                if (contactParts.length > 1) {
+                    senderTel = contactParts[0].replace('Tel. ', '').trim();
+                    senderFax = 'Fax ' + contactParts[1].trim();
+                } else {
+                    senderTel = bollaData.sender.contact.replace('Tel. ', '').trim();
+                }
+
+                // Raccogli gli articoli dalla tabella, usando i valori correnti degli input
+                itemsTableBody.querySelectorAll('tr').forEach(row => {
+                    const qty = row.querySelector('.qty-input').value;
+                    const skn = row.querySelector('.skn-input').value;
+                    const sku = row.querySelector('.sku-input').value;
+                    const size = row.querySelector('.size-input').value;
+                    const description = row.querySelector('.description-input').value;
+
+                    if (qty && skn) {
+                        bollaData.items.push({ qty, skn, sku, size, description });
+                    }
+                });
+
+                // Genera il contenuto HTML della bolla per la visualizzazione nel modal
+                const bollaHtml = `
+                    <div style="font-family: 'Inter', sans-serif; color: #374151; padding: 0.5cm;">
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.5cm;">
+                            <!-- Colonna Sinistra: Logo e Dati Mittente -->
+                            <div style="flex: 1; margin-right: 2cm;">
+                                <img src="https://brand-news.it/wp-content/uploads/2020/03/nuovo-logo-QVC-.jpg" alt="Logo Azienda" style="width: 100px; height: auto; margin-bottom: 0.5cm;">
+                                <h3 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 0.2cm;">QVC Italia S.r.l.</h3>
+                                <p style="font-size: 0.9rem;">${bollaData.sender.address}</p>
+                                <p style="font-size: 0.9rem;">Tel. ${senderTel}</p>
+                                ${senderFax ? `<p style="font-size: 0.9rem;">${senderFax}</p>` : ''}
+                                <p style="font-size: 0.9rem;">${bollaData.sender.fiscal}</p>
+                            </div>
+
+                            <!-- Colonna Destra: Numero/Data Bolla e Dati Destinatario -->
+                            <div style="flex: 1; text-align: right;">
+                                <p style="font-size: 0.9rem; margin-bottom: 0.5cm;">Numero: <span style="font-weight: 600;">${bollaData.number}</span></p>
+                                <p style="font-size: 0.9rem; margin-bottom: 2cm;">Data: <span style="font-weight: 600;">${bollaData.date}</span></p>
+
+                                <h3 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 0.5cm;">Spett.le:</h3>
+                                <p style="font-size: 0.9rem;">${bollaData.recipient.name}</p>
+                                <p style="font-size: 0.9rem;">${bollaData.recipient.address}</p>
+                                <p style="font-size: 0.9rem;">${bollaData.recipient.city}</p>
+                                <p style="font-size: 0.9rem;">${bollaData.recipient.phone}</p>
+                            </div>
+                        </div>
+
+                        <div style="margin-bottom: 1.5cm;">
+                            <h3 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 0.5cm;">Dettagli Articoli:</h3>
+                            <table style="width: 100%; border-collapse: collapse; border: 1px solid #ccc;">
+                                <thead>
+                                    <tr style="background-color: #f0f0f0;">
+                                        <th style="border: 1px solid #ccc; padding: 8px; text-align: center; font-size: 0.85rem; font-weight: 600;">QTY</th>
+                                        <th style="border: 1px solid #ccc; padding: 8px; text-align: left; font-size: 0.85rem; font-weight: 600;">SKN</th>
+                                        <th style="border: 1px solid #ccc; padding: 8px; text-align: left; font-size: 0.85rem; font-weight: 600;">SKU</th>
+                                        <th style="border: 1px solid #ccc; padding: 8px; text-align: left; font-size: 0.85rem; font-weight: 600;">SIZE</th>
+                                        <th style="border: 1px solid #ccc; padding: 8px; text-align: left; font-size: 0.85rem; font-weight: 600;">DESCRIZIONE DEI BENI</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${bollaData.items.map(item => `
+                                        <tr>
+                                            <td style="border: 1px solid #ccc; padding: 8px; text-align: center; font-size: 0.85rem;">${item.qty}</td>
+                                            <td style="border: 1px solid #ccc; padding: 8px; text-align: left; font-size: 0.85rem;">${item.skn}</td>
+                                            <td style="border: 1px solid #ccc; padding: 8px; text-align: left; font-size: 0.85rem;">${item.sku}</td>
+                                            <td style="border: 1px solid #ccc; padding: 8px; text-align: left; font-size: 0.85rem;">${item.size}</td>
+                                            <td style="border: 1px solid #ccc; padding: 8px; text-align: left; font-size: 0.85rem;">${item.description}</td>
+                                        </tr>
+                                    `).join('')}
+                                    ${bollaData.items.length === 0 ? '<tr><td colspan="5" style="border: 1px solid #ccc; padding: 8px; text-align: center; font-size: 0.85rem; color: #888;">Nessun articolo aggiunto.</td></tr>' : ''}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5cm; margin-bottom: 1.5cm; font-size: 0.9rem;">
+                            <div>
+                                <p><span style="font-weight: 600;">ASPETTO ESTERIORE DEI BENI:</span> ${bollaData.aspect}</p>
+                                <p><span style="font-weight: 600;">COLLI:</span> ${bollaData.packages}</p>
+                            </div>
+                            <div>
+                                <p><span style="font-weight: 600;">CAUSALE:</span> ${bollaData.reason}</p>
+                                <p><span style="font-weight: 600;">INIZIO TRASPORTO:</span> ${bollaData.transportStart}</p>
+                            </div>
+                        </div>
+
+                        <div style="margin-bottom: 2cm; font-size: 0.9rem;">
+                            <p style="font-weight: 600; margin-bottom: 0.5cm;">NOTE:</p>
+                            <p style="border: 1px solid #ccc; padding: 10px; min-height: 60px;">${bollaData.notes || 'Nessuna nota.'}</p>
+                        </div>
+
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2cm; font-size: 0.9rem;">
+                            <div>
+                                <p style="font-weight: 600; margin-bottom: 1cm;">FIRMA DEL CONDUCENTE:</p>
+                                <div style="border-bottom: 1px solid #000; padding-bottom: 4px;"></div>
+                            </div>
+                            <div>
+                                <p style="font-weight: 600; margin-bottom: 1cm;">FIRMA DEL DESTINATARIO:</p>
+                                <div style="border-bottom: 1px solid #000; padding-bottom: 4px;"></div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+                // Inietta l'HTML pulito nell'area di stampa e mostra il modal
+                printArea.innerHTML = bollaHtml;
+                bollaModal.style.display = 'flex'; // Mostra il modal
+            });
+
+            // Listener per il bottone "Pulisci Modulo"
+            clearFormBtn.addEventListener('click', () => {
+                recipientSelect.value = "";
+                fillRecipientFields(null);
+
+                aspectInput.value = 'A VISTA';
+                packagesInput.value = '1';
+                reasonInput.value = '';
+                notesInput.value = '';
+                massPasteInput.value = '';
+                itemsTableBody.innerHTML = '';
+                addRow();
+                bollaNumberInput.value = getNextBollaNumber();
+                bollaDateInput.value = getCurrentDate();
+                transportStartInput.value = getCurrentDate();
+                updatePackagesGlobal();
+            });
+
+            // Listener per chiudere il modal
+            closeModalBtn.addEventListener('click', () => {
+                bollaModal.style.display = 'none';
+            });
+
+            // Listener per il bottone di stampa nel modal
+            printBollaBtn.addEventListener('click', () => {
+                window.print();
+            });
+
+            // Chiudi il modal cliccando fuori dal contenuto
+            bollaModal.addEventListener('click', (e) => {
+                if (e.target === bollaModal) {
+                    bollaModal.style.display = 'none';
+                }
+            });
+
+            // Chiudi il modal con il tasto X
+            document.querySelector('.close-button').addEventListener('click', () => {
+                bollaModal.style.display = 'none';
+            });
+        });
+    </script>
+</body>
+</html>
